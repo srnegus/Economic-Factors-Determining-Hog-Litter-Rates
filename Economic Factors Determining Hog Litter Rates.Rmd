@@ -1,59 +1,104 @@
 ---
 output: 
-  pdf_document: default
+  pdf_document: 
+    extra_dependencies: ["booktabs", "caption","float", "graphicx","fancyhdr"]
+spacing: 1.5
 title: "Economic Factors Affecting Hog Litter Rates"
 author: Sean Negus
-abstract: "Hog litter rates have experienced significant changes which affect theoverall production of pork. An econometric model will be used to estimate the impact of prices and technology on hog litter rates. Results from the model will show how litter rates respond to changes in prices as well as how much of the growth can be attributed to improvements in technology."
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+#abstract: "Hog litter rates have experienced significant changes which affect the overall production of pork. An econometric model will be used #to estimate the impact of prices and technology on hog litter rates. Results from the model will show how litter rates respond to changes in #prices as well as how much of the growth can be attributed to improvements in technology."
 geometry: margin=1in
 fontsize: 12pt
-spacing: double
-#bibliography:# 
+indent: TRUE
 ---
 
-\newpage
+\begin{center}
+A creative component submitted to the graduate faculty in partial fulfillment of the requirements for the degree of
+\break
+\newline
+\newline MASTER OF SCIENCE
+\break
+\newline Major: Agricultural Economics
+\break
+\newline Program of Study Committee:
+\break
+\newline Chad Hart, Major Professor
+\break
+\newline
+\newline
+The student author, whose presentation of the scholarship herein was approved by the program of study committee, is solely responsible for the content of this creative component. The Graduate College will ensure this creative component is globally accessible and will not permit alterations after a degree is conferred.
+\newline
+\newline
+\end{center}
 
+
+\begin{center}
+\textbf{Abstract}
+\end{center}
+\begin{center}
+\small
+Hog litter rates have experienced significant changes that affect the overall production of pork. An econometric model is used to estimate the impact of prices and technology on hog litter rates. Results from the model show how litter rates respond to changes in prices as well as how much of the growth can be attributed to improvements in technology.
+\end{center}
+
+```{r include=FALSE}
+library(readxl)
+library(urca)
+library(vars)
+library(mFilter)
+library(forecast)
+library(tidyverse)
+library(tseries)
+library(plm)
+library(AER)
+
+#Read in Data
+lr_df = read_xlsx("lr_df.xlsx")
+```
+
+\captionsetup[table]{labelfont=bf, textfont=bf}
+\captionsetup[figure]{labelfont=bf, textfont=bf}
+\newpage
+\fancyhead[L]{\textit{Negus}}
+\fancyhead[R]{\textit{Hog Litter Rates}}
+\pagestyle{fancy}
 \begin{center}
 \textbf{Introduction}
 \end{center}
 
-The quantity of pork produced begins to some degree with hog litter rates. Variation in this litter rate stems largely from genetic selection and management practices. This could include selecting for certain traits that improve piglet survivability as well as introducing changes in practices such as housing, nutrition, or healthcare. Low litter rates can lead to a range of problems in the overall production process.
+The quantity of pork produced begins to some degree with hog litter rates. Variation in the litter rate stems largely from genetic selection and management practices. This could include selecting certain traits that improve piglet survivability as well as introducing changes in practices such as housing, nutrition, or healthcare. Low litter rates can lead to a range of problems in the overall production process.
 
-Low litter rates directly reduce the number of piglets reaching the post-weaning stage, decreasing the supply of pigs available for further growth and eventual processing for meat. In addition, a low rate could indicate genetics or management practices which contribute to health challenges encountered by surviving piglets. Health challenges during the pre-weaning period may impact growth and muscle development during later stages as well as overall meat quality.
+Low litter rates directly reduce the number of piglets reaching the post-weaning stage, decreasing the supply of pigs available for further growth and eventual processing for meat. In addition, a low rate could indicate genetics or management practices that contribute to health challenges encountered by surviving piglets. Health challenges during the pre-weaning period may impact growth and muscle development during later stages as well as overall meat quality.
 
 Litter rates can also have an impact on market timing. If a significant number of piglets do not survive, producers may need to compensate by maintaining sows for longer to reach the desired number of market-ready pigs. This will also have an impact on the time it takes for the remaining pigs to reach market weight. Both of these can influence the timing and consistency of pork supply.
 
-Pork producers can be impacted by increased production costs. Expenses associated with breeding, gestation, and farrowing occur regardless of piglet survival. When a significant number of piglets die before weaning, producers are unable to spread the aforementioned costs over a larger number of head. This impacts their profitability and could lead to increased prices for consumers.
+Pork producers are impacted by increased production costs. Expenses associated with breeding, gestation, and farrowing occur regardless of piglet survival. When a significant number of piglets die before weaning, producers are unable to spread the aforementioned costs over a larger number of head. This impacts their profitability and could lead to increased prices for consumers.
 
-Study into litter rates in hogs is important for determining the supply of pork as it is a direct influence on the quantity and timing of pigs available for processing. By quantifying the economic factors that determine litter rates, trends could be explained. Using an econometric model to estimate quarterly hog litter rates, supply elasticities can then be estimated, which, given expected changes to input and output prices, are useful for predicting the effects of changes in hog litter rates on pork supplies.
-
-\newpage
+An examination of litter rates in hogs is important for determining the supply of pork as litter rates are a direct influence on the quantity and timing of pigs available for processing. By quantifying the economic factors that determine litter rates, trends could be explained. Using an econometric model to estimate quarterly hog litter rates, supply elasticities can then be estimated, which, given expected changes to input and output prices, are useful for predicting the effects of changes in hog litter rates on pork supplies.
 
 \begin{center}
 \textbf{Objectives}
 \end{center}
 
-The purpose of this research is to answer what are the economic factors that determine changes in hog litter rates. To address this research problem this study will quantify the factors affecting hog litter rates through statistical analysis and an econometric model.
+Specifically, this analysis will look at the factors that influence piglet production such as market prices, production practices, nutrition, genetic advancements, and other economic incentives. The analysis will be broken down into the following framework.
 
-Building a theoretical supply model will provide a systematic way to organize and analyze pertinent economic concepts. These ideas will provide a foundation for understanding and further analysis. With the theoretical supply model serving as the basis for specifying the empirical model, the general equation will be able to be defined.
+First, the economic drivers of hog litter rates will be determined. Feed prices play a significant role in determining the resources available for sow nutrition. When feed prices are high, producers may cut back on high-quality nutrition or may not invest as much in sow management practices, potentially reducing reproductive success and litter sizes. The price of weaned pigs directly influences producers’ decisions about breeding practices. Higher prices for weaned pigs may encourage producers to invest more in sow health, genetics, and nutrition to increase litter sizes, while lower prices may reduce these investments. A favorable feed-to-pig price ratio can incentivize producers to improve management practices, enhance nutrition, and adopt better health practices for sows, all of which can improve litter rates. Advances in breeding technology, such as genetic selection for higher fertility rates and larger litters, have led to more piglets per litter. Understanding how these genetic improvements impact litter rates is crucial for predicting future trends in piglet production. Pre-weaning mortality is a key factor that affects the effective litter rate. Factors like sow health, nutrition, housing conditions, and management practices all influence pre-weaning mortality.
 
-Once the theoretical framework has been established and an empirical model specified, the study will be able to use the available data to estimate the model and test for potential statistical problems. With the estimated model the study will be able to analyze the coefficients, which show the effects of the economic factors on hog litter rates and draw conclusions.
+By modeling how these factors change over time, it can be estimated how improvements in these areas might increase the number of pigs that survive to market age. Using econometric methods, the study will estimate how changes in economic variables such as feed prices, market prices for weaned pigs, mortality rates, and genetic improvements affect the number of piglets per litter. For example, the model could estimate the effect of a 10% increase in feed prices on the average number of piglets born per litter, assuming other factors remain constant. Additionally, the model could incorporate supply elasticities, which measure how responsive litter rates are to changes in input or output prices.
 
-\newpage
+In summary, this analysis of hog litter rates aims to quantify the economic, biological, and technological factors that influence the productivity of piglet production, with a particular focus on how feed prices, market prices for weaned pigs, genetic improvements, pre-weaning mortality, and market incentives affect litter sizes. Using econometric models, the study estimates how these factors interact and provide insights into how changes in these factors influence future pork supplies.
 
 \begin{center}
 \textbf{Literature Review}
 \end{center}
 
-In previous research regarding the effects of market output and input prices on average dressed weights in cattle and hogs it was theorized that average dressed weights were a function of slaughter prices, livestock-corn price ratios (both current and lagged as decisions for future feeding are made based upon current prices), seasonality, and time trend (Marsh 1999). In the same article it was also theorized that market output and input prices on average live-weight depend on beginning weight and added weight.
+The framework of this study was derived from Marsh (1999). Given the importance of Marsh's work, a detailed summary is provided below. Marsh examined the effects of market output and input prices on average dressed weights in cattle and hogs it was theorized that average dressed weights were a function of slaughter prices, livestock-corn price ratios (both current and lagged as decisions for future feeding are made based upon current prices), seasonality, and time trend (Marsh 1999). In the same article, it was also theorized that market output and input prices on average live weight depend on beginning weight and added weight.
 
-The data used in the article was quarterly data over the years 1980-97. Due to the data being time series, variables were subject to tests of stationarity using the augmented Dickey Fuller unit root test to check for stationarity. The variables were found to be integrated of order one indicating non-stationarity. In addition, residuals were subjected to the ADF test to check for equation co-integration and were found to be co-integrated allowing for estimation in level form. Other potential statistical problems included endogeneity of the slaughter-corn price ratios, lagged dependent variables and auto-regressive errors. The Hausman specification test was performed and found joint dependency of all slaughter-corn price ratios. The Durbin h-test was used to test for auto-regressive errors and found that the null of no auto-regressive disturbances could not be rejected. White's disturbance test was conducted to test for constant variance against high and low profitability ratios. The null hypothesis of no heteroskedasticity was not rejected. The Jarque-Bera (JB) test was conducted to test for residual normality, and the null hypothesis of normal distribution was not rejected. Due to the results of the statistical tests, the models were estimated using iterative three-stage least squares.
+The data used in the Marsh article was quarterly data over the years 1980-97. Due to the data being time series, variables were subject to tests of stationarity using the augmented Dickey-Fuller unit root test to check for stationarity. The variables were found to be integrated of order one indicating non-stationarity. In addition, residuals were subjected to the ADF test to check for equation co-integration and were found to be co-integrated allowing for estimation in level form. Other potential statistical problems included endogeneity of the slaughter-corn price ratios, lagged dependent variables, and auto-regressive errors. The Hausman specification test was performed and found a joint dependency of all slaughter-corn price ratios. The Durbin h-test was used to test for auto-regressive errors and found that the null of no auto-regressive disturbances could not be rejected. White's disturbance test was conducted to test for constant variance against high and low profitability ratios. The null hypothesis of no heteroskedasticity was not rejected. The Jarque-Bera (JB) test was conducted to test for residual normality, and the null hypothesis of normal distribution was not rejected. Due to the results of the statistical tests, the models were estimated using iterative three-stage least squares.
 
-The empirical results found average dress weights of steers and heifers were negatively related to livestock-feed ratios, and positively related to costs of feeder placements. Trend was found to be significant and attributed to technological factors such as breeding genetics and feed nutrition. Dressed weights of cows positively responded to the cow-corn price ratio; but hog-corn price ratio was found to have an insignificant impact on hog dressed weights. The results found indicate that short-run changes in market prices dressed weights and therefore wholesale production as well as the effects of technology.
+The empirical results found average dress weights of steers and heifers were negatively related to livestock-feed ratios and positively related to the costs of feeder placements. The trend was found to be significant and attributed to technological factors such as breeding genetics and feed nutrition. Dressed weights of cows positively responded to the cow-corn price ratio, but the hog-corn price ratio was found to have an insignificant impact on hog dressed weights. The results indicated that short-run changes in market prices impact dressed weights and therefore wholesale production. In the long run, technology played a significant role in the growth of average dressed weights.
 
-The previous article will provide a framework as this study will take a similar approach but look solely into hogs. Instead of estimating the average dressing weight which is a factor of supply that is determined later in the production process than what this study will be looking at, hog litter rates which is very early in the production process but can have a large impact on different stages.
+The Marsh article provides the framework for this study as it will take a similar approach but look solely into hogs. Instead of estimating the average dressing weight, which is a factor of supply that is determined later in the production process, this study will examine hog litter rates, which is very early in the production process but can have a large impact on later stages of production.
 
-The importance of break even budgeting for cattle producers in the evaluation of whether to retain ownership of their cattle or sell was a topic analyzed by Anderson and Trap (2000). They theorized that cost of gain should be inelastic with regards to corn. They based this upon three things: substitution will occur between corn and other feeds as corn prices vary, second changes in the price of corn will cause changes the weight of cattle being placed on feed which will affect slaughter weights, and finally if feedlots maintain corn inventory or forward contract their corn then cost of gain will not be as responsive to corn price changes.
+The importance of break-even budgeting for cattle producers in the evaluation of whether to retain ownership of their cattle or sell was a topic analyzed by Anderson and Trap (2000). They theorized that the cost of gain should be inelastic with regard to corn. They based this upon three things: substitution will occur between corn and other feeds as corn prices vary, changes in the price of corn will cause changes in the weight of cattle being placed on feed and slaughter weights, and finally, if feedlots maintain corn inventory or forward contract their corn, then the cost of gain will not be as responsive to corn price changes.
 
 The study rationalized that the estimated model would have the following form:
 
@@ -61,19 +106,54 @@ $$
 COG = f(CORN, COS, SIN),
 $$
 
-where $COG$ (cost of gain per pound) is a function of $CORN$ (corn price/bushel) and $COS$ and $SIN$ which represent cosine and sine variables, respectively, based upon 12- and 6-month cycles of corn to account for the seasonality of the cost of grain. Initially a model with the current and five lagged corn prices was estimated with ordinary least squares but found autocorrelation was a significant problem. A second model was estimated using first differences of cost-of-gain and corn prices which can be shown as:$$
-COG_t - COG_{t-1} = \beta_0 + \sum_{i0}^{5}\beta_{i+1}(CORN_{t-i}-CORN_{t-(i+1)})+\beta_7COS_{12}+\beta_8COS_{6}+\beta_8SIN_{12}+\beta_8SIN_{6} + \epsilon_t
-$$ variables are as previously defined with subscripts on COS and SIN denoting the length of cycle in months. This model was an improvement but still had problems with autocorrelation. To correct for autocorrelation the model was re-estimated as a auto-regressive model of order two.
+Where $COG$ (cost of gain per pound) is a function of $CORN$ (corn price/bushel) and $COS$ and $SIN$, which represent cosine and sine variables, respectively, based upon 12- and 6-month cycles of corn to account for the seasonality of the cost of grain. Initially, a model with the current and five lagged corn prices was estimated with ordinary least squares but the authors found autocorrelation was a significant problem. A second model was estimated using the first differences of cost-of-gain and corn prices shown as: 
+$$
+\begin{aligned}
+COG_t - COG_{t-1} = \beta_0 + \sum_{i0}^{5}\beta_{i+1}(CORN_{t-i}-CORN_{t-(i+1)})+\\
+\beta_7COS_{12}+\beta_8COS_{6}+\beta_9SIN_{12}+\beta_10SIN_{6} + \epsilon_t
+\end{aligned}
+$$ 
+Where the variables are as previously defined with subscripts on COS and SIN denoting the length of the cycle in months. This model was an improvement but still had problems with autocorrelation. To correct for autocorrelation, the model was re-estimated as an auto-regressive model of order two.
 
-The results of the model were found to support the hypothesis that alterations to feeding programs in response to changes in corn prices would result in cost of gain being less responsive to corn price. Changes in corn prices in the last five periods were found to have a significant impact on changes in cost of gain with the third lag having the largest impact. This analysis indicates that slaughter cattle and corn prices are important determinants of beginning and ending weights in cattle finishing.
+The results of the model were found to support the hypothesis that alterations to feeding programs in response to changes in corn prices would result in the cost of gain being less responsive to corn prices. Changes in corn prices in the last five periods were found to have a significant impact on changes in the cost of gain with the third lag having the largest impact. This analysis indicates that slaughter cattle and corn prices are important determinants of beginning and ending weights in cattle finishing.
 
-This same logic can be applied to hog production in that live hog and corn prices would be important in determining the beginning and ending weights in hog finishing. This live hog to corn price ratio can be used as a proxy for profitability and will affect the demand hog finishers have for feeder pigs and subsequently the demand for weaned pigs.
+This same logic can be applied to hog production in that live hog and corn prices would be important in determining the beginning and ending weights in hog finishing. The live hog-to-corn price ratio can be used as a proxy for profitability and will affect the demand hog finishers have for feeder pigs and subsequently the demand for weaned pigs.
 
-An important factor in determining litter rates in swine production is the pre-wean mortality rate. Recent trends of an increase in larger litter sizes have led to reduced viability in piglets and as a result an increase in pre-wean mortality rates. These efforts to increase sow reproductive output results in greater variation of litter birth weights, increased competition for resources in utero, farrowing difficulties, and inadequate colostrum supply (Tucker et. al. 2021). To remedy this a few management strategies can be utilized to improve piglet survival. One of which is sow-specific dieting, this can improve colostrum production and sow energy reserves. Additionally, supervision during farrowing and the first 24 hours post piglet birth can improve piglet survival as this can ensure proper body temperatures and fostering techniques if needed. With the increasing prevalence of low-viability piglets due to the push for larger litter sizes in swine production it will be important to control for pre-weaning mortality rates in the modeling of hog litter rates.
+An important factor in determining litter rates in swine production is the pre-wean mortality rate. Recent trends of an increase in litter sizes have led to reduced viability in piglets and, as a result, an increase in pre-wean mortality rates. These efforts to increase sow reproductive output result in greater variation of litter birth weights, increased competition for resources in utero, farrowing difficulties, and inadequate colostrum supply (Tucker et. al. 2021). To remedy this, a few management strategies can be utilized to improve piglet survival. One of which is sow-specific dieting, as this can improve colostrum production and sow energy reserves. Additionally, supervision during farrowing and the first 24 hours post piglet birth can improve piglet survival as this can ensure proper body temperatures and fostering techniques if needed. With the increasing prevalence of low-viability piglets due to the push for larger litter sizes in swine production it will be important to control for pre-weaning mortality rates in the modeling of hog litter rates.
 
-The purpose of this analysis is to quantify the factors that determine changes in litter rates. Litter rates is an area that has demonstrated strong trends over the last 20 years. An econometric model used to estimate litter rates will provide estimates for supply elasticities which would be useful for predicting the effects of changes in litter rates on pork supplies. While substantial work has been done in estimating supply relationships involving livestock numbers (Rucker et. al. 1984; Nelson and Spreen 1978; Antonovitz and Green 1990; Dean and Heady 1958), other work has looked at the impact of litter size on flock productivity, feed demand, and gross margin in sheep (Farrell et. al. 2022). Less examination has been directed at estimating litter rates in hogs in supply analysis.
+The purpose of this analysis is to quantify the factors that determine changes in litter rates. Litter rates have demonstrated a strong trend over the last 20 years, as seen in Figure 1, due to improvements in production practices and genetics.
 
-\newpage
+\begin{figure}[h]
+\centering
+  \caption{Litter Rates Over Time}
+\end{figure}
+
+```{r echo=FALSE, fig.align='center', out.width="60%", out.height='60%'}
+fmt = "%Y-Q%q"
+lr_df$Date = as.yearqtr(lr_df$Date, format = fmt)
+
+lr_df %>%
+  ggplot(aes(Date, litter_rate)) + geom_line(color="red") +
+  xlab("Year") + ylab("Litter Rate") +
+  scale_x_yearqtr(breaks = seq(from = min(lr_df$Date)-1, to = max(lr_df$Date), by = 4), format = fmt, ) +
+  labs(caption = "Note: The decrease seen during Q4 of 2013 to Q2 of 2014 can be attributed to the spread of the \n
+           Porcine Epidemic Diarrhea virus (PEDv), a coronavirus lethal to pre-weaned piglets.") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust=0),
+        axis.line = element_line(colour = "black"),
+        axis.title.x = element_text(size=12, face="bold", color = "black"),
+        axis.title.y = element_text(size=12, face="bold", color = "black"),
+        axis.text.x = element_text(size=10, face="bold", color = "black"),
+        axis.text.y = element_text(size=10, face="bold", color = "black"),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.y = element_line(color = "grey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_blank())
+
+```
+
+An econometric model used to estimate litter rates will provide estimates for supply elasticities, which would be useful for predicting the effects of changes in litter rates on pork supplies. While substantial work has been done in estimating supply relationships involving livestock numbers (Rucker et. al. 1984; Nelson and Spreen 1978; Antonovitz and Green 1990; Dean and Heady 1958), other work has looked at the impact of litter size on flock productivity, feed demand, and gross margin in sheep (Farrell et. al. 2022). Less examination has been directed at estimating litter rates in hogs in supply analysis.
 
 \begin{center}
 \textbf{Conceptual Framework}
@@ -82,39 +162,241 @@ The purpose of this analysis is to quantify the factors that determine changes i
 The modeling of litter rates for hogs will follow the following general equation:
 
 $$
-LR_t = f[(P_{LH}/P_C)_t,P_{WP_t},PWM_t,Q_2,Q_3,Q_4,T]
-$$ In the model, $LR$, represents the dependent variable litter, which is the number of pigs weaned per litter. Litter rates is a function of the independent variables including the price of live hogs, price of #2 yellow corn, and price of weaned pigs, denoted as $P_{LH}$,$P_C$, and $P_{WP}$ respectively. $PWM$ is the pre-weaning mortality rate which is the incidence rate of piglets that do not survive past weaning. $Q$ is the set of quarterly indicator variables to account for seasonality: $Q_2$= quarter 2, $Q_3$=quarter 3,and $Q_4$= quarter 4 ($Q_1$ is omitted). $T$ represents the time trend.
+LR_t = f[(P_{LH}/P_C)_t,P_{WP_t},PWM_t,U_t,Q_2,Q_3,Q_4,T,LR_{t-1}]
+$$
+In the model, $LR_t$ represents the dependent variable, which is the number of pigs weaned per litter. Litter rates are a function of the independent variables including the price of live hogs, the price of #2 yellow corn, and the price of weaned pigs, denoted as $P_{LH}$,$P_{C}$, and $P_{WP_t}$ respectively. $PWM_t$ is the pre-weaning mortality rate, which is the incidence rate of piglets that do not survive past weaning. $U_t$ denotes the percent unemployment. $Q$ is the set of quarterly indicator variables to account for seasonality: $Q_2$ = quarter 2, $Q_3$ = quarter 3, and $Q_4$ = quarter 4 ($Q_1$ is omitted). $T$ represents the time trend.
 
-The first variable in the equation is the live hog-corn price ratio. Output-input price ratios are widely used in livestock demand/supply estimations serving as proxies for finishing profitability, and as discussed earlier could affect the demand for weaned pigs. It is possible that a lagged form of the variable is necessary as producers add weight according to current expected price ratios, and beginning weights depend on price ratios of the previous period (Marsh). Likewise a lagged dependent variable may need to be included as the impacts of a change in weaned pig prices may not fully adjust in one given quarter as production and breeding practices which would impact litter rates take time to implement as well as sow gestation taking roughly 115 days.
-
-\newpage
-
-\begin{center}
-\textbf{Data and Testing}
-\end{center}
-
-
-The data set will be compiled using data from the time period of 2004-2023 from multiple sources, specifically USDA surveys, and PigCHAMP, a swine software company that specializes in data collection, management, and interpretation. The dependent variable of interest, hog litter rates, measured in pigs per litter, will come from the USDA's monthly Hog Inventory Survey. The variable, feed price ratio, measured in price per bushel/price per hundred weight (corn-hog live weight), will come from USDA's monthly Agricultural Prices Survey. The remaining variables, weaned-pig prices and pre-weaning mortality rate will come from the USDA National Direct Feeder Pig Report and PigCHAMP respectively.
-
-Initially the data will need to be properly formatted into quarterly intervals as the various reports are reported weekly, monthly, or quarterly. In addition, for the variable weaned-pig prices data is missing for the weeks of 2008-12-26, 2009-12-25, 2010-12-24, 2013-10-04, and 2013-10-1 due to the USDA not issuing reports because not many pigs are traded around the week ending near Christmas and the government shutdown in 2013. To compensate for the missing values linear interpolation will be used.
-
-Quarterly variables will undergo tests of stationarity using the augmented Dickey-Fuller (ADF) unit root test as regressions with random walks of the dependent and independent variables can lead to misleading statistical evidence by biasing significance tests (Johnson and DiNardo 2009). Also due to multiple variables in the equation the residuals will be ADF test to determine equation co-integration which when non-stationary is rejected allows for equation estimation in level form.
-
-\newpage
+The rationale for the aforementioned model is as follows. Output-input price ratios are widely used in livestock demand/supply estimations serving as proxies for finishing profitability and, as discussed earlier, could affect the demand for weaned pigs. The price of weaned pigs is an economic factor that impacts decisions about breeding and sow productivity. Higher weaned pig prices generally incentivize producers to invest more in reproductive management, health, and nutrition, leading to improved litter rates while lower prices would reduce investment into those factors. High pre-weaning mortality rates can depress the number of weaned pigs per litter, effectively reducing the litter rate. Unemployment serves as a proxy for economic conditions, as well as accounting for labor availability. Quarter variables were included as seasonal weather patterns can increase piglet mortality due to extreme temperatures, as well as having an impact on sow fertility. A time trend was included to account for advances in breeding technology, genetics, and management practices. Genetics plays a significant role in improving litter sizes, along with advances in breeding techniques, increasing the reproductive potential of sows over time. Improved management practices, such as better housing, nutrition, and veterinary care, have helped reduce mortality rates and increase the number of piglets weaned per sow. A lagged dependent variable will be included as the impacts of changes may not be fully captured in one quarter, given that sow gestation takes roughly 115 days.
 
 \begin{center}
 \textbf{Statistics}
 \end{center}
 
+Table 1 shows the summary statistics for litter rates, independent variables, and controls. The statistics show, on average, 14% of the litter does not make it past weaning. This results in an average of 10 pigs per litter. Over this period weaned pigs had an average price of $39.45 while hog feeders saw an average feed-price ratio of 14.4. Also over this period, the average unemployment rate was 5.9%.
+
+As shown by the standard deviations, there is a smaller spread between observations for litter rates and pre-weaning mortality, 0.765 pigs per litter and 0.02% respectively. Whereas there is a larger spread between observations for wean price, feed-price ratio, and unemployment, $9.95/head, 4.40 bushels, and 2.097%. 
+
+\begin{table}[h]
+\centering
+  \caption{Summary Statistics}
+  
+\smallskip
+\scalebox{0.8}{
+\begin{tabular}{l c c c c c}
+\toprule
+ & Litter Rate & Pre-Weaning Mortality & Wean Price & Feed-Price Ratio & Unemployment\\
+ & (head) & ($\%$) & ($\$$/head) & (bushels) & ($\%$)\\
+\midrule
+ Mean & 10.159 & 13.92 & 39.45 & 14.40 & 5.892 \\  [1ex]
+ Maximum & 11.670 & 19.55 & 67.63 & 25.90 & 13.000 \\  [1ex]
+ Minimum & 8.870 & 11.12 & 17.03 & 8.90 & 3.500 \\  [1ex]
+ Standard Deviation & 0.765 & 0.02 & 9.95 & 4.40 & 2.097 \\  [1ex]
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \newpage
+
+Table 2 shows the averages of each variable by quarter. This is to illustrate any possible seasonality in the variables. The variables that show the strongest signs of seasonality are weaned pig prices and the feed-price ratio. For weaned pig prices, the higher prices in Q$_1$ and Q$_4$ can be attributed to seasonal summer strength in slaughter prices for finishers. Likewise, the lower price in Q$_2$ and Q$_3$ can be attributed to seasonally low slaughter hog prices in the fall. For the feed-price ratio, the seasonality can likely be attributed to the seasonality of corn production. In Q$_1$ and Q$_4$ the new crop corn supply leads to lower corn prices and a lower feed-price ratio (13.56 and 13.95). As the supply starts to decrease in the middle of the year, Q$_2$ and Q$_3$, the price of corn increases leading to a higher feed-price ratio, 14.70 and 15.39 respectively.
+
+Pre-weaning mortality rates show some seasonality with higher mortality rates in Q$_1$ and Q$_4$ (14.26% and 14.00%) and lower rates in Q$_2$ and Q$_3$ (13.57% and 13.84%), which could possibly be attributed to young piglets being better suited to handling warm temperatures rather than cool ones. Hog litter rates seem to share some similarities to pre-weaning mortality. The lowest is observed in Q$_1$, typically the coldest months, but then shows Q$_3$ and Q$_4$, which are again cooler months, as the highest.
+
+\begin{table}[h]
+\centering
+  \caption{Averages by Quarter}
+  
+\smallskip
+\scalebox{0.8}{
+\begin{tabular}[H]{l c c c c c}
+\toprule
+ & Litter Rate & Pre-Weaning Mortality & Wean Price & Feed-Price Ratio & Unemployment\\
+ & (head) & ($\%$) & ($\$$/head) & (bushels) & ($\%$)\\
+\midrule
+ Q$_1$ & 10.002 & 14.26$\%$ & 47.04 & 13.56 & 5.765$\%$ \\  [1ex]
+ Q$_2$ & 10.172 & 13.57$\%$ & 36.13 & 14.70 & 6.177$\%$ \\  [1ex]
+ Q$_3$ & 10.239 & 13.84$\%$ & 32.94 & 15.39 & 5.897$\%$ \\  [1ex]
+ Q$_4$ & 10.222 & 14.00$\%$ & 41.70 & 13.95 & 5.730$\%$ \\  [1ex]
+\bottomrule
+\end{tabular}}
+\end{table}
+
+Figure 2 shows the trend of pre-weaning mortality rates over time. Over the course of the period, the mortality rate has increased by an average of 0.056%, Which can be attributed to the increase in litter sizes which subsequently leads to low birth weights. These low birth weights can lead to a variety of negative long-term health effects.
+
+\newpage
+
+\begin{figure}[h]
+\centering
+  \caption{Pre-Weaning Mortality Rates Over Time}
+\end{figure}
+
+```{r echo=FALSE, fig.align='center', out.width="60%", out.height='60%'}
+lr_df %>%
+  ggplot(aes(Date, pwm)) + geom_line(color="red") +
+  xlab("Year") + ylab("Mortality Rate") +
+  scale_x_yearqtr(breaks = seq(from = min(lr_df$Date)-1, to = max(lr_df$Date), by = 4), format = fmt, ) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(colour = "black"),
+        axis.title.x = element_text(size=12, face="bold", color = "black"),
+        axis.title.y = element_text(size=12, face="bold", color = "black"),
+        axis.text.x = element_text(size=10, face="bold", color = "black"),
+        axis.text.y = element_text(size=10, face="bold", color = "black"),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.y = element_line(color = "grey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_blank())
+```
+\begin{center}
+\textbf{Data and Testing}
+\end{center}
+
+The data set was compiled using data from multiple sources, specifically USDA surveys, Federal Reserve Bank of St. Louis, and PigCHAMP. The incoming data is reported in various units of observation (weekly, monthly, and quarterly) so data was formatted into the standard calendar quarters, i.e. first quarter referring to Jan-Mar, second quarter Apr-Jun, etc. The data takes place over the 2004-2023 time period with a resulting 80 observations.
+
+Hog litter rates, measured in the number of weaned pigs per litter, comes from the USDA’s quarterly *Hogs and Pigs* report. The feed-price ratio, measured in the number of bushels of corn equal in value to 100 pounds of live hog, comes from USDA’s monthly *Agricultural Prices* report. Weaned-pig prices, price per head, were obtained from USDA's weekly *National Direct Feeder Pig* report; pre-weaning mortality rates, PigCHAMP's benchmarking summaries; and unemployment rates, Federal Reserve Bank of St. Louis. Note for the weaned-pig prices, data was missing for the weeks of 2008-12-26, 2009-12-25, 2010-12-24, 2013-10-04, and 2013-10-1 due to the USDA not issuing reports as not many pigs are traded around the week ending near Christmas and the government shutdown in 2013. To compensate for the missing values, linear interpolation was used.
+
+Quarterly variables underwent tests of stationarity using the augmented Dickey-Fuller (ADF) unit root test as regressions with random walks of the dependent and independent variables can lead to misleading statistical evidence by biasing significance tests (Johnson and DiNardo 2009). Based on the results of the ADF testing, the null hypothesis of a unit root was rejected at the $\alpha$ = 0.05 significance level for all variables (level form) except unemployment which was found to be integrated of order one. Due to unemployment being integrated of order one, the residuals were ADF tested for nonstationary series. When equations with unit root variables reject nonstationary residuals, the relations are cointegrated, allowing for equation estimation (Johnson and DiNardo 2009). The results were to reject the null of a unit root for equation residuals at the $\alpha$ = 0.05 significance level.
+
+Potential problems of estimating the litter rate function by OLS include endogeneity of wean prices and pre-weaning mortality rate. The Hausman specification test for simultaneous equation bias was conducted using U.S. pork exports and the number of days above 100$^{\circ}$F and below 0$^{\circ}$ in the Des Moines, IA area for each quarter as instrumental variables for wean prices and pre-weaning mortality rate. The validity of pork exports as an instrumental variable can be explained as exports are determined by external factors, like international demand and trade policies, rather than domestic supply for weaned pigs. When pork exports rise, it can increase the profitability of pork production, which can incentivize more breeding. The validity of extreme temperatures as an instrumental variable can be explained by temperatures being unrelated to a farm's decision-making process as they cannot be directly controlled or anticipated. When temperatures are extreme, the likelihood of stressful conditions is increased. The results rejected the null hypothesis of no joint dependency at the $\alpha$ = 0.05 significance level. However, given the endogeneity concerns, the regression model is estimated via both OLS and 2-Stage-Least Squares.
+
+Based on the previous discussion of the model and the endogenous relationships between litter rates, wean prices, and pre-weaning mortality rates, in order to forecast litter rates into future periods a vector autoregressive (VAR) model will be used. In determining the number of lags in the model, due to the data being in quarterly intervals and the partial autocorrelation function graphs of the variables commonly having significant lags between one and four, a max lag of four was selected. Using the Akaike information criterion to determine the proper number of lags, a VAR(4) model was chosen.
+
+Possible problems in a vector autoregressive model include serial correlation, heteroskedasticity, and structural breaks in the residuals. Using the Portmanteau test for serially correlated disturbances, the test failed to reject the null of no serial correlation at the $\alpha$ = 0.05 level. To determine heteroskedasticity the ARCH Engle's test was performed and indicated no heteroskedasticity by failing to reject the null of no heteroskedasticity at the $\alpha$ = 0.05 level. To check for structural breaks in the residuals the OLS Cumulative Sum test was performed and based on the resulting graphs, no structural breaks were found.
 
 \begin{center}
 \textbf{Empirical Results}
 \end{center}
 
-\newpage
+Table 3 presents both the OLS and 2-Stage Least Squares regression results for the litter rate equation. The adjusted R$^2$ for the two regressions were 0.9917 (OLS) and 0.9785 (2SLS) respectively.
+
+\begin{table}[h]
+\centering
+  \caption{OLS and 2SLS Estimates of Litter Rates (log-log model)}
+  
+\scalebox{0.9}{
+\setlength{\tabcolsep}{8pt}  
+\begin{tabular}{l c c}
+\toprule
+ & OLS & 2SLS \\
+ \cmidrule{2-3}
+Regressors/Statistics & \multicolumn{2}{c}{Litter Rates}\\
+\midrule
+ Wean Price & -0.0001 & 0.0006\\
+   &  (0.0001) & (0.0005)\\ [1ex]
+ Feed-Price Ratio & 0.0008 & 0.0044\\
+    &  (0.0035) & (0.0069)\\ [1ex]
+ Pre-Weaning Mortality Rate & -0.6236$^{***}$ & -1.4307$^{***}$\\
+    &  (0.0845) & (0.5020)\\ [1ex]
+ Unemployment & 0.0775$^{*}$ & 0.0909\\
+    &  (0.0452) & (0.0756)\\ [1ex]
+ Trend & 0.0020$^{***}$ & 0.0027$^{***}$\\
+    &  (0.0003) & (0.0007)\\ [1ex]
+ Lagged Litter Rate & 0.4927$^{***}$ & 0.4094$^{***}$\\
+    &  (0.0716) & (0.1526)\\ [1ex]
+ Constant & 1.1708$^{***}$ & 1.4068$^{***}$\\
+    &  (0.1597) & (0.3600)\\ [1ex]
+ Q$_2$ & 0.0135$^{***}$ & 0.0151$^{**}$\\
+    &  (0.0028) & (0.0071)\\ [1ex]
+ Q$_3$ & 0.0111$^{***}$ & 0.0176$^{**}$\\
+    &  (0.0027) & (0.0075)\\ [1ex]
+ Q$_4$ & 0.0063$^{**}$ & 0.0083$^{*}$\\
+    &  (0.0023) & (0.0043)\\ [1ex]
+ Adjusted R$^2$ & 0.9917 & 0.9785\\  [1ex]
+\bottomrule
+\footnotesize{Note: $^{***}\, p<0.01$; $^{**}\, p<0.05$; $^{*}\, p<0.1$}\\
+\footnotesize{The standard errors are given in parenthesis below the estimated coefficients}
+\end{tabular}}
+\end{table}
+
+Regarding the estimates for both models, the coefficients on wean price and feed-price ratio were found not to be statistically significant. This is not surprising given that, over the long run, litter rates are largely a function of genetics and production practices. However, in the short run, these variables may have a more significant effect. Given the model's current specification, this would not be properly quantified as decisions on changes in production are based on prices from a previous period.
+
+The OLS coefficients on wean price and feed-price ratio were found to be highly inelastic (and possibly biased due to endogeneity). For example, a 10% increase in wean prices leads to a 0.001% decrease in litter rates, which intuitively would be expected to have a positive effect on litter rates, while a 10% increase in the feed-price ratio leads to a 0.008% increase in litter rates. For the 2SLS coefficients, a 10% increase in wean prices leads to a 0.006% increase in litter rates, and a 10% increase in the feed-price ratio leads to a 0.044% increase in litter rates.
+
+Unemployment, in both models, was not found to be statistically significant. It is possible this is a result of conflicting effects of unemployment. Low unemployment is often seen as a sign of good economic conditions as it typically reflects a healthy and growing economy which would lead to stronger pork demand and larger budgeting for genetic research, but low unemployment could also indicate a lack of on-farm labor. The lack of labor could then impact the quality of care given. 
+
+The coefficient on pre-weaning was found to have a relatively large and significant effect on litter rates, as a 10% increase in the mortality rate leads to a 6.236% (OLS) and 14.307% (2SLS) decrease in the litter rate. Unemployment was found to have a positive effect on litter rates, for example, a 10% increase in unemployment leads to a 0.775% (OLS) and 0.909% (2SLS) increase in litter rates.
+
+Both regressions showed significant seasonality and trend effects. The trend coefficients imply quarterly growth of 0.2% (OLS) and 0.27% (2SLS). For OLS, the quarterly coefficients indicate litter rates rise in all quarters, relative to the first quarter, but decline relative to the second quarter in the third and fourth quarters. For 2SLS, litter rates rise in all quarters, relative to the first quarter, but rise in the third quarter and decline in the fourth relative to the second quarter.
+
+Figure 3 compares the actual litter rate over the time period with the predicted litter rate from the fitted VAR(4) model. In addition, the VAR model was used to predict 20 periods out from the end of the model (2023 Q1 - 2027 Q4) with a 95% confidence interval.
+
+\begin{figure}[h]
+\centering
+  \caption{Forecast of Litter Rates}
+\end{figure}
+
+```{r echo=FALSE, fig.align='center', warning=FALSE, out.height='90%', out.width="90%"}
+forecast_df = read_xlsx("forecast_df.xlsx")
+
+forecast_df$Date = as.yearqtr(forecast_df$Date, format = fmt)
+
+forecast_df %>%
+  ggplot(aes(x = Date)) + 
+  geom_line(aes(y = litter_rate, color="Actual")) +
+  geom_line(aes(y = fitted_vals, color="Predicted")) +
+  geom_ribbon(aes(ymin = lower_bound,ymax = upper_bound, fill="95% Confidence Interval"), alpha=0.2) +
+  scale_color_manual(values=c("red", "blue")) +
+  labs(color = "") +
+  guides(fill = guide_legend(title = "")) +
+  xlab("Year") + ylab("Litter Rate") +
+  scale_x_yearqtr(breaks = seq(from = min(forecast_df$Date), to = max(forecast_df$Date), by = 2), format = fmt, ) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(colour = "black"),
+        axis.title.x = element_text(size=12, face="bold", color = "black"),
+        axis.title.y = element_text(size=12, face="bold", color = "black"),
+        axis.text.x = element_text(size=10, face="bold", color = "black", angle = 90),
+        axis.text.y = element_text(size=10, face="bold", color = "black"),
+        panel.grid.major.y = element_line(color = "grey"),
+        panel.grid.minor.y = element_line(color = "grey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.position='bottom',
+        panel.background = element_blank())
+```
+
+In Figure 3 the red line shows the actual reported litter rates over the time period. The blue line represents the predicted values from the VAR model with the line post 2023 Q1 serving as the central forecast. The shaded area (around the central line) shows the 95% confidence interval. This means there's a 95% chance that the actual litter rate will fall within the shaded range. The central forecast indicates that by Q$_4$ of 2027, the litter rate will be at 12.05. The shaded area indicates, with 95% confidence, that the litter rate will be between 11.74 and 12.36 by Q$_4$ of 2027.
 
 \begin{center}
 \textbf{Conclusion}
 \end{center}
 
+In this analysis, hog litter rates were estimated using both OLS and 2SLS models. Litter rates were found to be positively related to wean price and feed-price ratio in the 2SLS model, albeit not statistically significant. The coefficients were found to be highly inelastic, reflecting that in the long-run market, prices have minimal effect on litter rates. In the OLS model, the same coefficients were also found to be highly inelastic but with wean price having a negative relationship with litter rates indicating possible bias caused by endogeneity.
+
+The trend was found to be statistically significant, reflecting technological factors such as genetics, production practices, and nutrition. Over the period litter rates increased by 2.8 piglets. Using the percentage growth rates given by the trend coefficients, the results indicate that 78.7% (2SLS) and 58.3% (OLS) can be attributed to technology.
+
+Given the previous coefficients on wean price and feed-price ratio, further analysis of the relationship between litter rates and market prices may be beneficial. In the short run, these variables may have a more significant effect than previously found, as decisions on changes in production would be made based on prices from a previous period. By including lagged versions of these variables the relationship may be better quantified but would likely require different statistical methods than OLS and 2SLS.
+
+Looking towards the future of litter rates, researchers have been working on developing pigs that are resistant to Porcine Reproductive and Respiratory Syndrome (PRRS) using genetic engineering with the goal of producing pigs that either do not contract the virus or are less susceptible to its effects. The disease has major effects on pre-weaning mortality. It can cause reproductive problems in breeding sows such as stillbirth and respiratory issues in piglets that can lead to infection and death. Currently, the genetic technology is awaiting the FDA's regulatory approval before entering commerce. If the pigs are approved in the future this could lead to a drastic increase in litter rates through reducing the pre-weaning mortality rate.
+
+\newpage
+
+\begin{center}
+\textbf{References}
+\end{center}
+
+\noindent Anderson, John D., and James N. Trapp. “Corn Price Effects on Cost of Gain for Feedlot \indent Cattle: Implications for Breakeven Budgeting.” *Journal of Agricultural and Resource* \indent Economics, vol. 25, no. 2, 2000, <http://www.jstor.org/stable/40987083>. \hfill\break
+
+\noindent Antonovitz, Frances, and Richard Green. “Alternative estimates of Fed Beef supply \indent response to risk.” *American Journal of Agricultural Economics*, vol. 72, no. 2, May \indent 1990, <https://doi.org/10.2307/1242351>. \hfill\break
+
+\noindent Dean, Gerald W., and Earl O. Heady. “Changes in supply response and elasticity for hogs.” \indent Journal of Farm Economics, vol. 40, no. 4, Nov. 1958, <https://doi.org/10.2307/1234771>. \hfill\break
+
+\noindent Farrell, L., P. Creighton, A. Bohan, F. McGovern, and N. McHugh “Bio-economic modelling \indent of sheep meat production systems with varying flock litter size using field data.” *Elsevier*, \indent Oct. 2022, <https://doi.org/10.1016/j.animal.2022.100640>. \hfill\break
+
+\noindent Federal Reserve Bank of St. Louis. "Unemployment Rate" FRED, St. Louis, MO. 2003-2023 \indent <https://fred.stlouisfed.org/series/UNRATE> \hfill\break
+
+\noindent Johnston, John, and John E. DiNardo. *Econometric Methods*. MacGraw-Hill, 2009. \hfill\break
+
+\noindent Marsh, John M. “Economic Factors Determining Changes in Dressed Weights of Live \indent Cattle and Hogs.” *Journal of Agricultural and Resource Economics*, vol. 24, no. 2, 1999, \indent <http://www.jstor.org/stable/40987025>. \hfill\break
+
+\noindent Nelson, Glenn, and Thomas Spreen. “Monthly Steer and heifer supply.” \break\indent American Journal of Agricultural Economics, vol. 60, no. 1, Feb. 1978, pp. 117–\indent 125, <https://doi.org/10.2307/1240167>. \hfill\break
+
+\noindent PigCHAMP. "Benchmarking Summaries" Ames, IA. 2003-2023. \break\indent <https://www.pigchamp.com/benchmarking/benchmarking-summaries> \hfill\break
+
+\noindent Rucker, Randal R., O. Burt, and J. LaFrance. “An econometric model of cattle \break\indent inventories.” *American Journal of Agricultural Economics*, vol. 66, no. 2, May 1984, \indent <https://doi.org/10.2307/1241030>. \hfill\break
+
+\noindent Tucker, Bryony S., J. Craig, R. Morrison, R. Smits, and R. Kirkwood. “Piglet Viability: \indent A Review of Identification and Pre-Weaning Management Strategies.” *MDPI*, 6 \indent Oct. 2021, <https://doi.org/10.3390/ani11102902>. \hfill\break
+
+\noindent U.S. Department of Agriculture. "National Direct Feeder Pig Report." USDA/NASS, \break\indent Washington, DC. 2003-2023. <https://usda.library.cornell.edu/concern/publications/t435gc99f?locale=en> \hfill\break
+
+\noindent U.S. Department of Agriculture. "Quarterly Hogs and Pigs." USDA/NASS, Washington,DC. \indent 2003-2023. <https://usda.library.cornell.edu/concern/publications/rj430453j?locale=en> \hfill\break
+
+\noindent U.S. Department of Agriculture. "Agricultural Prices" USDA/NASS, Washington, DC. \indent 2003-2023. <https://usda.library.cornell.edu/concern/publications/c821gj76b?locale=en>
